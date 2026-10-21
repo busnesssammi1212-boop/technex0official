@@ -1,6 +1,8 @@
 // Paid-project unlock flow (visitors) + admin review panel (requests, keys, visitors).
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v = '') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Price shown to visitors: a bare number like 10 or $10 becomes "10 USDT"; anything else (e.g. 0.01 ETH) is shown as typed.
+export function fmtPrice(v) { v = String(v || '').trim(); const m = v.match(/^\$?\s*(\d+(?:\.\d+)?)$/); return m ? `${m[1]} USDT` : v; }
 let geo = { country: '??', city: '' };
 const device = localStorage.getItem('tnx_device') || (() => { const d = crypto.randomUUID(); localStorage.setItem('tnx_device', d); return d; })();
 async function loadGeo() { try { geo = await (await fetch('/api/geo')).json(); } catch {} }
@@ -20,11 +22,11 @@ export async function openUnlock(post, db) {
   const wallet = $('#wallet-address')?.textContent.trim() || '';
   const saved = localStorage.getItem('tnx_req_' + post.id) || '';
   dlg.innerHTML = `<div class="modal-card"><button class="modal-close" type="button" data-x aria-label="Close">×</button>
-    <div class="section-kicker">PAID PROJECT · ${esc(post.price_text || '')}</div><h2>${esc(post.title)}</h2>
+    <div class="section-kicker">PAID PROJECT · ${esc(fmtPrice(post.price_text))}</div><h2>${esc(post.title)}</h2>
     <label class="field-label">I have an access key</label><input id="u-key" placeholder="TNX-XXXXXX-XXXXXX-XXXXXX-XXXXXX" autocomplete="off">
     <button id="u-redeem" class="button button-primary button-full" type="button">Unlock</button><p id="u-msg" class="form-message"></p><hr>
     <div class="section-kicker">BUY ACCESS</div>
-    <p class="modal-copy">Send <b>${esc(post.price_text || 'the listed price')}</b> to <code>${esc(wallet)}</code> (EVM networks only), then upload the payment screenshot. The admin verifies it within 24 hours.</p>
+    <p class="modal-copy">Send <b>${esc(fmtPrice(post.price_text) || 'the listed price')}</b> to <code>${esc(wallet)}</code> (EVM networks only, e.g. BEP20 / ERC20 / Polygon), then upload the payment screenshot. The admin verifies it within 24 hours.</p>
     <label class="field-label">Your contact (email or Discord)</label><input id="u-contact" maxlength="200">
     <label class="field-label">Transaction hash (optional)</label><input id="u-tx" maxlength="200">
     <label class="field-label">Payment screenshot (PNG/JPG/WEBP, max 20 MB)</label><input id="u-file" type="file" accept="image/png,image/jpeg,image/webp">

@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,394 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#070b0a" />
   <meta name="description" content="Technex Official — discover useful projects, tools, and GitHub releases." />
-
   <title>Technex Official — Project Hub</title>
-
   <link rel="icon" href="favicon.png" type="image/png" />
-
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9435188171904221"
-       crossorigin="anonymous"></script>
-
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Website CSS -->
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-  <div class="ambient ambient-one"></div>
-  <div class="ambient ambient-two"></div>
-
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="Technex Official home">
-      <img class="brand-logo" src="logo.png" alt="Technex" />
-      <b>OFFICIAL</b>
-    </a>
-
-    <nav class="nav-links" aria-label="Main navigation">
-      <a href="#projects">Projects</a>
-      <a href="#hire">Hire me</a>
-      <a href="#donate">Donate</a>
-      <a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a>
-      <a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
-    </nav>
-
-    <button id="admin-open" class="button button-quiet" type="button">
-      Admin Login <span>↗</span>
-    </button>
+    <a class="brand" href="./" aria-label="Technex Official home"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a>
+    <nav class="nav-links" aria-label="Main navigation"><a href="#projects">Projects</a><a href="#hire">Hire me</a><a href="#donate">Donate</a><a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a><a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a></nav>
+    <button id="admin-open" class="button button-quiet" type="button">Admin Login <span>↗</span></button>
   </header>
 
   <main id="top">
-
-    <!-- HERO -->
     <section class="hero">
-      <div class="eyebrow">
-        <span class="status-dot"></span>
-        COMMUNITY PROJECT DIRECTORY
-        <span class="eyebrow-line"></span>
-        <span class="mono">LIVE FEED</span>
-      </div>
-
+      <div class="eyebrow"><span class="status-dot"></span> COMMUNITY PROJECT DIRECTORY <span class="eyebrow-line"></span> <span class="mono">LIVE FEED</span></div>
       <h1>Build something.<br><span>Share it with everyone.</span></h1>
-
-      <p class="hero-copy">
-        A home for useful tools, open-source projects, and new releases from the Technex community.
-      </p>
-
-      <div class="hero-actions">
-        <a class="button button-primary" href="#projects">Explore projects <span>↓</span></a>
-        <a class="button button-outline" href="https://github.com" target="_blank" rel="noopener noreferrer">Explore GitHub ↗</a>
-      </div>
-
-      <div class="hero-foot">
-        <span><i class="tiny-dot"></i> Public project feed</span>
-        <span><i class="tiny-dot"></i> Updates in real time</span>
-        <span class="mono">NO REFRESH NEEDED</span>
-      </div>
+      <p class="hero-copy">A home for useful tools, open-source projects, and new releases from the Technex community.</p>
+      <div class="hero-actions"><a class="button button-primary" href="#projects">Explore projects <span>↓</span></a><a class="button button-outline" href="https://github.com" target="_blank" rel="noopener noreferrer">Explore GitHub ↗</a></div>
+      <div class="hero-foot"><span><i class="tiny-dot"></i> Public project feed</span><span><i class="tiny-dot"></i> Updates in real time</span><span class="mono">NO REFRESH NEEDED</span></div>
     </section>
 
-    <!-- PROJECTS -->
     <section id="projects" class="projects-section">
-      <div class="section-heading">
-        <div>
-          <div class="section-kicker">THE DIRECTORY</div>
-          <h2>Latest <span>projects.</span></h2>
-        </div>
-
-        <div class="live-label">
-          <span class="status-dot"></span>
-          <span id="connection-label">Connecting to live feed…</span>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <label class="searchbox">
-          <span class="search-icon">⌕</span>
-          <input id="search-input" type="search" placeholder="Search projects, tools, categories…" autocomplete="off" />
-          <kbd>SEARCH</kbd>
-        </label>
-
-        <div class="filter-wrap">
-          <label for="category-filter" class="sr-only">Filter by category</label>
-          <select id="category-filter">
-            <option value="all">All categories</option>
-            <option>Tools</option>
-            <option>Discord</option>
-            <option>Web</option>
-            <option>AI</option>
-            <option>Utilities</option>
-            <option>Other</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="project-grid" class="project-grid" aria-live="polite">
-        <div class="loading-card">
-          <span class="spinner"></span>
-          <p>Loading projects from database…</p>
-        </div>
-      </div>
-
-      <div id="empty-state" class="empty-state hidden">
-        <div class="empty-icon">⌕</div>
-        <h3>No projects found</h3>
-        <p>Try a different search, or check back when new projects are published.</p>
-      </div>
-
-      <div class="feed-footer">
-        <span><span class="status-dot"></span> Database-synced project feed</span>
-        <span id="project-count" class="mono">0 PROJECTS</span>
-      </div>
+      <div class="section-heading"><div><div class="section-kicker">THE DIRECTORY</div><h2>Latest <span>projects.</span></h2></div><div class="live-label"><span class="status-dot"></span><span id="connection-label">Connecting to live feed…</span></div></div>
+      <div class="toolbar"><label class="searchbox"><span class="search-icon">⌕</span><input id="search-input" type="search" placeholder="Search projects, tools, categories…" autocomplete="off"/><kbd>SEARCH</kbd></label><div class="filter-wrap"><label for="category-filter" class="sr-only">Filter by category</label><select id="category-filter"><option value="all">All categories</option><option>Tools</option><option>Discord</option><option>Web</option><option>AI</option><option>Utilities</option><option>Other</option></select></div></div>
+      <div id="project-grid" class="project-grid" aria-live="polite"><div class="loading-card"><span class="spinner"></span><p>Loading projects from database…</p></div></div>
+      <div id="empty-state" class="empty-state hidden"><div class="empty-icon">⌕</div><h3>No projects found</h3><p>Try a different search, or check back when new projects are published.</p></div>
+      <div class="feed-footer"><span><span class="status-dot"></span> Database-synced project feed</span><span id="project-count" class="mono">0 PROJECTS</span></div>
     </section>
 
-    <!-- HIRE TECHNEX -->
     <section id="hire" class="hire-section">
       <div class="section-kicker">HIRE TECHNEX</div>
-
       <h2>Need a Discord server <span>or website?</span></h2>
-
-      <p class="donate-copy">
-        I build clean, working projects for creators and communities.
-        Tell me what you need and I will reply with a plan and price.
-      </p>
-
+      <p class="donate-copy">I build clean, working projects for creators and communities. Tell me what you need and I will reply with a plan and price.</p>
       <div class="hire-grid">
-        <article class="project-card hire-card">
-          <div class="card-top">
-            <div class="project-avatar">DS</div>
-            <span class="category-pill cat-discord">Discord</span>
-          </div>
-
-          <h3>Discord Server Build</h3>
-
-          <p class="project-description">
-            Complete server setup: channels and categories, roles and permissions,
-            welcome and verification, moderation, ticket system and useful bots.
-          </p>
-
-          <div class="tag-list">
-            <span class="tag">setup</span>
-            <span class="tag">roles</span>
-            <span class="tag">bots</span>
-            <span class="tag">moderation</span>
-          </div>
-        </article>
-
-        <article class="project-card hire-card">
-          <div class="card-top">
-            <div class="project-avatar">WB</div>
-            <span class="category-pill cat-web">Web</span>
-          </div>
-
-          <h3>Website Development</h3>
-
-          <p class="project-description">
-            Fast, mobile-friendly websites: portfolio, landing page or project hub
-            with a database, admin panel and live deployment on Vercel.
-          </p>
-
-          <div class="tag-list">
-            <span class="tag">responsive</span>
-            <span class="tag">supabase</span>
-            <span class="tag">vercel</span>
-            <span class="tag">admin panel</span>
-          </div>
-        </article>
+        <article class="project-card hire-card"><div class="card-top"><div class="project-avatar">DS</div><span class="category-pill cat-discord">Discord</span></div><h3>Discord Server Build</h3><p class="project-description">Complete server setup: channels and categories, roles and permissions, welcome and verification, moderation, ticket system and useful bots.</p><div class="tag-list"><span class="tag">setup</span><span class="tag">roles</span><span class="tag">bots</span><span class="tag">moderation</span></div></article>
+        <article class="project-card hire-card"><div class="card-top"><div class="project-avatar">WB</div><span class="category-pill cat-web">Web</span></div><h3>Website Development</h3><p class="project-description">Fast, mobile-friendly websites: portfolio, landing page or project hub with a database, admin panel and live deployment on Vercel.</p><div class="tag-list"><span class="tag">responsive</span><span class="tag">supabase</span><span class="tag">vercel</span><span class="tag">admin panel</span></div></article>
       </div>
-
-      <div class="hire-actions">
-        <a class="button button-primary" href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">
-          Contact on Discord <span>↗</span>
-        </a>
-
-        <a class="button button-outline" href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">
-          See my work on YouTube ↗
-        </a>
-      </div>
-
-      <p class="donate-warning">
-        Open a ticket or message in the Discord server with what you need,
-        your budget and deadline. Payment terms are agreed before work starts.
-      </p>
+      <div class="hire-actions"><a class="button button-primary" href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Contact on Discord <span>↗</span></a><a class="button button-outline" href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">See my work on YouTube ↗</a></div>
+      <p class="donate-warning">Open a ticket or message in the Discord server with what you need, your budget and deadline. Payment terms are agreed before work starts.</p>
     </section>
 
-    <!-- DONATIONS -->
     <section id="donate" class="donate-section">
       <div class="section-kicker">SUPPORT TECHNEX</div>
-
       <h2>Support <span>our work.</span></h2>
-
-      <p class="donate-copy">
-        If you like our projects, you can support us with crypto.
-        Every donation helps us build more free tools.
-      </p>
-
+      <p class="donate-copy">If you like our projects, you can support us with crypto. Every donation helps us build more free tools.</p>
       <div class="donate-card">
-        <img
-          id="donate-qr"
-          class="donate-qr"
-          alt="Wallet address QR code"
-          width="150"
-          height="150"
-          loading="lazy"
-          src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data=0xf69883d8804753fF730631C52AEf669016fB45b0"
-          onerror="this.style.display='none'"
-        />
-
+        <img id="donate-qr" class="donate-qr" alt="Wallet address QR code" width="150" height="150" loading="lazy" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data=0xf69883d8804753fF730631C52AEf669016fB45b0" onerror="this.style.display='none'" />
         <div class="donate-info">
           <div class="field-label">WALLET ADDRESS (EVM)</div>
-
           <code id="wallet-address" class="wallet-address">0xf69883d8804753fF730631C52AEf669016fB45b0</code>
-
-          <div class="donate-actions">
-            <button id="copy-wallet" class="button button-primary" type="button">
-              Copy address <span>⧉</span>
-            </button>
-          </div>
-
-          <p class="donate-warning">
-            Works on Ethereum, BNB Smart Chain (BEP20), Polygon, Arbitrum,
-            Optimism and Base. Send only EVM-compatible tokens (ETH, BNB,
-            USDT/USDC on those networks). Do not send BTC, TRON (TRC20)
-            or Solana to this address, or the funds will be lost.
-          </p>
+          <div class="donate-actions"><button id="copy-wallet" class="button button-primary" type="button">Copy address <span>⧉</span></button></div>
+          <p class="donate-warning">Works on Ethereum, BNB Smart Chain (BEP20), Polygon, Arbitrum, Optimism and Base. Send only EVM-compatible tokens (ETH, BNB, USDT/USDC on those networks). Do not send BTC, TRON (TRC20) or Solana to this address, or the funds will be lost.</p>
         </div>
       </div>
     </section>
 
-    <!-- COMMUNITY CTA -->
-    <section class="cta-strip">
-      <div class="cta-icon">⌘</div>
-
-      <div>
-        <h3>Made something cool?</h3>
-        <p>Publish your project on GitHub and share it with the community.</p>
-      </div>
-
-      <a href="https://github.com/new" target="_blank" rel="noopener noreferrer" class="button button-outline">
-        Create a GitHub repo ↗
-      </a>
-    </section>
-
+    <section class="cta-strip"><div class="cta-icon">⌘</div><div><h3>Made something cool?</h3><p>Publish your project on GitHub and share it with the community.</p></div><a href="https://github.com/new" target="_blank" rel="noopener noreferrer" class="button button-outline">Create a GitHub repo ↗</a></section>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <a class="brand footer-brand" href="./" aria-label="Technex Official home">
-      <img class="brand-logo" src="logo.png" alt="Technex" />
-      <b>OFFICIAL</b>
-    </a>
-
-    <span>Built for creators, makers & curious minds.</span>
-
-    <span class="mono">© <span id="year"></span> TECHNEX</span>
-  </footer>
+  <footer class="footer"><a class="brand footer-brand" href="./" aria-label="Technex Official home"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a><span>Built for creators, makers & curious minds.</span><span class="mono">© <span id="year"></span> TECHNEX</span></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ADMIN LOGIN DIALOG -->
   <dialog id="auth-dialog" class="modal">
     <form id="auth-form" class="modal-card">
       <button class="modal-close" type="button" data-close="auth-dialog" aria-label="Close">×</button>
-
-      <div class="modal-symbol">⌁</div>
-      <div class="section-kicker">RESTRICTED AREA</div>
-
-      <h2>Admin <span>sign in.</span></h2>
-
-      <p class="modal-copy">
-        Sign in with the admin account you created in Supabase.
-        Only allowlisted admins can publish posts.
-      </p>
-
-      <label class="field-label" for="auth-email">Email</label>
-      <input id="auth-email" type="email" required autocomplete="username" placeholder="admin@example.com" />
-
-      <label class="field-label" for="auth-password">Password</label>
-      <input id="auth-password" type="password" required autocomplete="current-password" placeholder="Your password" minlength="6" />
-
-      <button class="button button-primary button-full" type="submit">
-        Sign in <span>→</span>
-      </button>
-
-      <p id="auth-message" class="form-message" role="status"></p>
+      <div class="modal-symbol">⌁</div><div class="section-kicker">RESTRICTED AREA</div><h2>Admin <span>sign in.</span></h2><p class="modal-copy">Sign in with the admin account you created in Supabase. Only allowlisted admins can publish posts.</p>
+      <label class="field-label" for="auth-email">Email</label><input id="auth-email" type="email" required autocomplete="username" placeholder="admin@example.com" />
+      <label class="field-label" for="auth-password">Password</label><input id="auth-password" type="password" required autocomplete="current-password" placeholder="Your password" minlength="6" />
+      <button class="button button-primary button-full" type="submit">Sign in <span>→</span></button><p id="auth-message" class="form-message" role="status"></p>
     </form>
   </dialog>
 
-  <!-- ADMIN DASHBOARD -->
   <dialog id="admin-dialog" class="modal modal-wide">
     <div class="modal-card admin-card">
       <button class="modal-close" type="button" data-close="admin-dialog" aria-label="Close">×</button>
-
-      <div class="admin-top">
-        <div>
-          <div class="section-kicker">CONTROL ROOM</div>
-          <h2>Manage <span>projects.</span></h2>
-          <p class="modal-copy">
-            Published posts are saved in Supabase and stay online after refresh.
-          </p>
-        </div>
-
-        <button id="sign-out" class="button button-quiet" type="button">Sign out ↗</button>
-      </div>
-
+      <div class="admin-top"><div><div class="section-kicker">CONTROL ROOM</div><h2>Manage <span>projects.</span></h2><p class="modal-copy">Published posts are saved in Supabase and stay online after refresh.</p></div><button id="sign-out" class="button button-quiet" type="button">Sign out ↗</button></div>
       <form id="post-form" class="post-form">
         <input id="post-id" type="hidden" />
-
-        <div class="form-grid">
-          <div class="form-field form-span">
-            <label class="field-label" for="post-title">Project title *</label>
-            <input id="post-title" maxlength="120" required placeholder="e.g. Technex Discord Toolkit" />
-          </div>
-
-          <div class="form-field">
-            <label class="field-label" for="post-category">Category</label>
-            <select id="post-category">
-              <option>Tools</option>
-              <option>Discord</option>
-              <option>Web</option>
-              <option>AI</option>
-              <option>Utilities</option>
-              <option>Other</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="field-label" for="post-url">GitHub / project URL * (paid: hidden until key)</label>
-            <input id="post-url" type="url" required placeholder="https://github.com/user/project" />
-          </div>
-
-          <div class="form-field">
-            <label class="field-label" for="post-access">Access</label>
-            <select id="post-access">
-              <option value="free">Free (public link)</option>
-              <option value="paid">Paid (key required)</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="field-label" for="post-price">Price (paid only)</label>
-            <input id="post-price" maxlength="40" placeholder="e.g. 10 USDT" />
-          </div>
-
-          <div class="form-field form-span">
-            <label class="field-label" for="post-description">Description *</label>
-            <textarea id="post-description" maxlength="700" required rows="3" placeholder="What does this project do? (max 700 characters)"></textarea>
-          </div>
-
-          <div class="form-field form-span">
-            <label class="field-label" for="post-tags">Tags (comma-separated, optional)</label>
-            <input id="post-tags" maxlength="160" placeholder="javascript, discord, open-source" />
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button id="cancel-edit" class="button button-quiet hidden" type="button">Cancel edit</button>
-          <button id="publish-button" class="button button-primary" type="submit">Publish project <span>↗</span></button>
-        </div>
-
+        <div class="form-grid"><div class="form-field form-span"><label class="field-label" for="post-title">Project title *</label><input id="post-title" maxlength="120" required placeholder="e.g. Technex Discord Toolkit" /></div>
+        <div class="form-field"><label class="field-label" for="post-category">Category</label><select id="post-category"><option>Tools</option><option>Discord</option><option>Web</option><option>AI</option><option>Utilities</option><option>Other</option></select></div>
+        <div class="form-field"><label class="field-label" for="post-url">GitHub / project URL * (paid: hidden until key)</label><input id="post-url" type="url" required placeholder="https://github.com/user/project" /></div>
+        <div class="form-field"><label class="field-label" for="post-access">Access</label><select id="post-access"><option value="free">Free (public link)</option><option value="paid">Paid (key required)</option></select></div>
+        <div class="form-field"><label class="field-label" for="post-price">Price (paid only)</label><input id="post-price" maxlength="40" placeholder="e.g. 10 (shown as 10 USDT)" /></div>
+        <div class="form-field form-span"><label class="field-label" for="post-description">Description *</label><textarea id="post-description" maxlength="700" required rows="3" placeholder="What does this project do? (max 700 characters)"></textarea></div>
+        <div class="form-field form-span"><label class="field-label" for="post-tags">Tags (comma-separated, optional)</label><input id="post-tags" maxlength="160" placeholder="javascript, discord, open-source" /></div></div>
+        <div class="form-actions"><button id="cancel-edit" class="button button-quiet hidden" type="button">Cancel edit</button><button id="publish-button" class="button button-primary" type="submit">Publish project <span>↗</span></button></div>
         <p id="post-message" class="form-message" role="status"></p>
       </form>
-
-      <div class="admin-list-head">
-        <h3>Your published posts</h3>
-        <span id="admin-post-count" class="mono">0 POSTS</span>
-      </div>
-
-      <div id="admin-post-list" class="admin-post-list">
-        <p class="muted">Loading…</p>
-      </div>
-
+      <div class="admin-list-head"><h3>Your published posts</h3><span id="admin-post-count" class="mono">0 POSTS</span></div><div id="admin-post-list" class="admin-post-list"><p class="muted">Loading…</p></div>
       <div id="admin-extra"></div>
     </div>
   </dialog>
-
-  <!-- WEBSITE JAVASCRIPT -->
   <script type="module" src="app.js"></script>
-
 </body>
 </html>

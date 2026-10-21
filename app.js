@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { logVisit, openUnlock, renderAdminExtras } from './access.js';
+import { logVisit, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
 const grid = $('#project-grid');
@@ -55,7 +55,7 @@ function renderPosts() {
   for (const post of posts) {
     const url = safeUrl(post.project_url);
     const paid = post.access_type === 'paid';
-    const tags = (paid ? `<span class="tag paid-tag">PAID · ${escapeHtml(post.price_text || '')}</span>` : '') + (post.tags || []).slice(0, 5).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+    const tags = (paid ? `<span class="tag paid-tag">PAID · ${escapeHtml(fmtPrice(post.price_text))}</span>` : '') + (post.tags || []).slice(0, 5).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
     const card = document.createElement('article');
     card.className = 'project-card';
     card.innerHTML = `<div class="card-top"><div class="project-avatar">${escapeHtml(initials(post.title))}</div><span class="category-pill cat-${categoryClass(post.category)}">${escapeHtml(post.category)}</span></div>
