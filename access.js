@@ -27,7 +27,7 @@ export async function openUnlock(post, db) {
     <p class="modal-copy">Send <b>${esc(post.price_text || 'the listed price')}</b> to <code>${esc(wallet)}</code> (EVM networks only), then upload the payment screenshot. The admin verifies it within 24 hours.</p>
     <label class="field-label">Your contact (email or Discord)</label><input id="u-contact" maxlength="200">
     <label class="field-label">Transaction hash (optional)</label><input id="u-tx" maxlength="200">
-    <label class="field-label">Payment screenshot (PNG/JPG/WEBP, max 5 MB)</label><input id="u-file" type="file" accept="image/png,image/jpeg,image/webp">
+    <label class="field-label">Payment screenshot (PNG/JPG/WEBP, max 20 MB)</label><input id="u-file" type="file" accept="image/png,image/jpeg,image/webp">
     <button id="u-buy" class="button button-outline button-full" type="button">Submit payment proof</button><p id="u-bmsg" class="form-message"></p><hr>
     <label class="field-label">Already submitted? Enter your request code</label><input id="u-code" value="${esc(saved)}" autocomplete="off">
     <button id="u-check" class="button button-quiet button-full" type="button">Check status</button><p id="u-cmsg" class="form-message"></p></div>`;
@@ -46,7 +46,7 @@ export async function openUnlock(post, db) {
   $('#u-buy', dlg).onclick = async () => {
     const contact = $('#u-contact', dlg).value.trim(), tx = $('#u-tx', dlg).value.trim(), f = $('#u-file', dlg).files[0];
     const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[f?.type];
-    if (contact.length < 3 || !ext || f.size > 5 * 1024 * 1024) return say('#u-bmsg', 'Enter your contact and a PNG/JPG/WEBP screenshot under 5 MB.', 'error-text');
+    if (contact.length < 3 || !ext || f.size > 20 * 1024 * 1024) return say('#u-bmsg', 'Enter your contact and a PNG/JPG/WEBP screenshot under 20 MB.', 'error-text');
     say('#u-bmsg', 'Uploading…');
     const path = `${crypto.randomUUID()}.${ext}`;
     const up = await db.storage.from('payment-proofs').upload(path, f, { contentType: f.type });
