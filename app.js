@@ -177,4 +177,9 @@ async function boot() {
     console.error(error); $('#connection-label').textContent = 'Connection error'; grid.innerHTML = `<div class="error-card"><strong>Could not connect.</strong><p>${escapeHtml(error.message || 'Unknown error')}</p></div>`;
   }
 }
+$('#copy-wallet')?.addEventListener('click', async () => {
+  const address = $('#wallet-address').textContent.trim();
+  try { await navigator.clipboard.writeText(address); showToast('Wallet address copied.', 'success'); }
+  catch { const r = document.createRange(); r.selectNodeContents($('#wallet-address')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); showToast('Press Ctrl+C to copy.', 'info'); }
+});
 boot();

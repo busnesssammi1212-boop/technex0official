@@ -15,7 +15,7 @@
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Technex Official home"><span class="brand-mark">T<span>×</span></span><span>TECHNEX <b>OFFICIAL</b></span></a>
-    <nav class="nav-links" aria-label="Main navigation"><a href="#projects">Projects</a><a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a><a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a></nav>
+    <nav class="nav-links" aria-label="Main navigation"><a href="#projects">Projects</a><a href="#donate">Donate</a><a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a><a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a></nav>
     <button id="admin-open" class="button button-quiet" type="button">Admin Login <span>↗</span></button>
   </header>
 
@@ -34,6 +34,21 @@
       <div id="project-grid" class="project-grid" aria-live="polite"><div class="loading-card"><span class="spinner"></span><p>Loading projects from database…</p></div></div>
       <div id="empty-state" class="empty-state hidden"><div class="empty-icon">⌕</div><h3>No projects found</h3><p>Try a different search, or check back when new projects are published.</p></div>
       <div class="feed-footer"><span><span class="status-dot"></span> Database-synced project feed</span><span id="project-count" class="mono">0 PROJECTS</span></div>
+    </section>
+
+    <section id="donate" class="donate-section">
+      <div class="section-kicker">SUPPORT TECHNEX</div>
+      <h2>Support <span>our work.</span></h2>
+      <p class="donate-copy">If you like our projects, you can support us with crypto. Every donation helps us build more free tools.</p>
+      <div class="donate-card">
+        <img id="donate-qr" class="donate-qr" alt="Wallet address QR code" width="150" height="150" loading="lazy" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data=0xf69883d8804753fF730631C52AEf669016fB45b0" onerror="this.style.display='none'" />
+        <div class="donate-info">
+          <div class="field-label">WALLET ADDRESS (EVM)</div>
+          <code id="wallet-address" class="wallet-address">0xf69883d8804753fF730631C52AEf669016fB45b0</code>
+          <div class="donate-actions"><button id="copy-wallet" class="button button-primary" type="button">Copy address <span>⧉</span></button></div>
+          <p class="donate-warning">Works on Ethereum, BNB Smart Chain (BEP20), Polygon, Arbitrum, Optimism and Base. Send only EVM-compatible tokens (ETH, BNB, USDT/USDC on those networks). Do not send BTC, TRON (TRC20) or Solana to this address, or the funds will be lost.</p>
+        </div>
+      </div>
     </section>
 
     <section class="cta-strip"><div class="cta-icon">⌘</div><div><h3>Made something cool?</h3><p>Publish your project on GitHub and share it with the community.</p></div><a href="https://github.com/new" target="_blank" rel="noopener noreferrer" class="button button-outline">Create a GitHub repo ↗</a></section>
