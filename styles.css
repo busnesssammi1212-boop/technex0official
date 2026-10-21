@@ -6,3 +6,5 @@
 @media(max-width:560px){.donate-card{flex-direction:column;align-items:stretch;padding:18px}.donate-qr{align-self:center}}
 
 .paid-tag{color:#f1d29b;border-color:#4a3b22;background:#241e13}.unlock-btn{background:none;border:0;cursor:pointer;font-family:inherit}.xsec{margin-top:28px}.xrow{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #1d2921;font-size:11px;flex-wrap:wrap}.xrow small{display:block;color:#7e8d83;font-size:10px;margin-top:3px;overflow-wrap:anywhere}.xrow>div:first-child{min-width:0;flex:1}.xrow select,.xrow input{width:auto!important;flex:1;min-width:120px}#unlock-dialog hr{border:0;border-top:1px solid #1d2921;margin:22px 0}
+
+.brand-logo{height:26px;width:auto;display:block}.footer-brand .brand-logo{height:20px}.brand b{font-size:11px;letter-spacing:2px}@media(max-width:560px){.brand-logo{height:21px}}
