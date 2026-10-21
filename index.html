@@ -76,13 +76,16 @@
         <input id="post-id" type="hidden" />
         <div class="form-grid"><div class="form-field form-span"><label class="field-label" for="post-title">Project title *</label><input id="post-title" maxlength="120" required placeholder="e.g. Technex Discord Toolkit" /></div>
         <div class="form-field"><label class="field-label" for="post-category">Category</label><select id="post-category"><option>Tools</option><option>Discord</option><option>Web</option><option>AI</option><option>Utilities</option><option>Other</option></select></div>
-        <div class="form-field"><label class="field-label" for="post-url">GitHub / project URL *</label><input id="post-url" type="url" required placeholder="https://github.com/user/project" /></div>
+        <div class="form-field"><label class="field-label" for="post-url">GitHub / project URL * (paid: hidden until key)</label><input id="post-url" type="url" required placeholder="https://github.com/user/project" /></div>
+        <div class="form-field"><label class="field-label" for="post-access">Access</label><select id="post-access"><option value="free">Free (public link)</option><option value="paid">Paid (key required)</option></select></div>
+        <div class="form-field"><label class="field-label" for="post-price">Price (paid only)</label><input id="post-price" maxlength="40" placeholder="e.g. 10 USDT" /></div>
         <div class="form-field form-span"><label class="field-label" for="post-description">Description *</label><textarea id="post-description" maxlength="700" required rows="3" placeholder="What does this project do? (max 700 characters)"></textarea></div>
         <div class="form-field form-span"><label class="field-label" for="post-tags">Tags (comma-separated, optional)</label><input id="post-tags" maxlength="160" placeholder="javascript, discord, open-source" /></div></div>
         <div class="form-actions"><button id="cancel-edit" class="button button-quiet hidden" type="button">Cancel edit</button><button id="publish-button" class="button button-primary" type="submit">Publish project <span>↗</span></button></div>
         <p id="post-message" class="form-message" role="status"></p>
       </form>
       <div class="admin-list-head"><h3>Your published posts</h3><span id="admin-post-count" class="mono">0 POSTS</span></div><div id="admin-post-list" class="admin-post-list"><p class="muted">Loading…</p></div>
+      <div id="admin-extra"></div>
     </div>
   </dialog>
   <script type="module" src="app.js"></script>

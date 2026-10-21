@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { logVisit, openUnlock, renderAdminExtras } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
 const grid = $('#project-grid');
@@ -53,16 +54,19 @@ function renderPosts() {
   grid.classList.remove('hidden'); emptyState.classList.add('hidden');
   for (const post of posts) {
     const url = safeUrl(post.project_url);
-    const tags = (post.tags || []).slice(0, 5).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+    const paid = post.access_type === 'paid';
+    const tags = (paid ? `<span class="tag paid-tag">PAID · ${escapeHtml(post.price_text || '')}</span>` : '') + (post.tags || []).slice(0, 5).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
     const card = document.createElement('article');
     card.className = 'project-card';
     card.innerHTML = `<div class="card-top"><div class="project-avatar">${escapeHtml(initials(post.title))}</div><span class="category-pill cat-${categoryClass(post.category)}">${escapeHtml(post.category)}</span></div>
       <h3>${escapeHtml(post.title)}</h3><p class="project-description">${escapeHtml(post.description)}</p>
       ${tags ? `<div class="tag-list">${tags}</div>` : '<div class="tag-list tag-list-empty"></div>'}
-      <div class="card-bottom"><span class="date-label"><span class="tiny-square"></span>${formatDate(post.created_at)}</span>${url ? `<a class="project-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">View project <span>↗</span></a>` : '<span class="muted">Invalid URL</span>'}</div>`;
+      <div class="card-bottom"><span class="date-label"><span class="tiny-square"></span>${formatDate(post.created_at)}</span>${paid ? `<button class="project-link unlock-btn" type="button" data-unlock="${post.id}">Unlock 🔒</button>` : url ? `<a class="project-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">View project <span>↗</span></a>` : '<span class="muted">Invalid URL</span>'}</div>`;
     grid.append(card);
   }
 }
+
+grid.addEventListener('click', (e) => { const b = e.target.closest('[data-unlock]'); if (b) openUnlock(allPosts.find(p => p.id === b.dataset.unlock), supabase); });
 
 function renderAdminPosts() {
   const list = $('#admin-post-list');
@@ -78,7 +82,7 @@ function renderAdminPosts() {
 
 async function loadPosts() {
   if (!supabase) return;
-  const { data, error } = await supabase.from('posts').select('id,title,description,project_url,category,tags,created_at,updated_at').order('created_at', {ascending:false});
+  const { data, error } = await supabase.from('posts').select('id,title,description,project_url,category,tags,created_at,updated_at,access_type,price_text').order('created_at', {ascending:false});
   if (error) { grid.innerHTML = `<div class="error-card"><strong>Could not load projects.</strong><p>${escapeHtml(error.message)}</p><p>Check config.js and run schema.sql in Supabase.</p></div>`; $('#connection-label').textContent = 'Database connection error'; $('#connection-label').parentElement.classList.add('offline'); return; }
   allPosts = data || []; renderPosts();
   if (isAdmin && adminDialog.open) renderAdminPosts();
@@ -94,7 +98,7 @@ function resetPostForm() {
   $('#post-form').reset(); $('#post-id').value = ''; $('#publish-button').innerHTML = 'Publish project <span>↗</span>';
   $('#cancel-edit').classList.add('hidden'); setMessage('#post-message', '');
 }
-function openAdmin() { resetPostForm(); renderAdminPosts(); if (!adminDialog.open) adminDialog.showModal(); }
+function openAdmin() { resetPostForm(); renderAdminPosts(); renderAdminExtras({ db: supabase, getPosts: () => allPosts, showToast }); if (!adminDialog.open) adminDialog.showModal(); }
 
 $('#search-input').addEventListener('input', renderPosts);
 $('#category-filter').addEventListener('change', renderPosts);
@@ -129,10 +133,12 @@ $('#post-form').addEventListener('submit', async (event) => {
   const title = $('#post-title').value.trim(); const description = $('#post-description').value.trim(); const project_url = safeUrl($('#post-url').value.trim());
   if (!title || !description || !project_url) return setMessage('#post-message', 'Enter a title, description, and valid http(s) project URL.', 'error-text');
   const tags = [...new Set($('#post-tags').value.split(',').map(tag => tag.trim()).filter(Boolean))].slice(0,10);
-  const payload = {title, description, project_url, category: $('#post-category').value, tags};
+  const paid = $('#post-access').value === 'paid';
+  const payload = {title, description, project_url: paid ? null : project_url, category: $('#post-category').value, tags, access_type: paid ? 'paid' : 'free', price_text: paid ? ($('#post-price').value.trim() || null) : null};
   const id = $('#post-id').value; const button = $('#publish-button'); button.disabled = true; setMessage('#post-message', id ? 'Saving changes…' : 'Publishing…');
   const result = id ? await supabase.from('posts').update(payload).eq('id', id).select().single() : await supabase.from('posts').insert(payload).select().single();
   button.disabled = false;
+  if (!result.error) { const pid = result.data.id; const pr = paid ? await supabase.from('project_private').upsert({project_id: pid, secret_url: project_url}) : await supabase.from('project_private').delete().eq('project_id', pid); if (pr.error) result.error = pr.error; }
   if (result.error) { setMessage('#post-message', result.error.message, 'error-text'); return; }
   resetPostForm(); setMessage('#post-message', id ? 'Project updated successfully.' : 'Project published successfully.', 'success-text');
   await loadPosts(); renderAdminPosts(); showToast(id ? 'Project updated.' : 'Project published.', 'success');
@@ -143,7 +149,7 @@ $('#admin-post-list').addEventListener('click', async (event) => {
   const editButton = event.target.closest('[data-edit]'); const deleteButton = event.target.closest('[data-delete]');
   if (editButton) {
     const post = allPosts.find(item => item.id === editButton.dataset.edit); if (!post) return;
-    $('#post-id').value = post.id; $('#post-title').value = post.title; $('#post-description').value = post.description; $('#post-url').value = post.project_url; $('#post-category').value = post.category; $('#post-tags').value = (post.tags || []).join(', ');
+    $('#post-id').value = post.id; $('#post-title').value = post.title; $('#post-description').value = post.description; $('#post-access').value = post.access_type || 'free'; $('#post-price').value = post.price_text || ''; $('#post-url').value = post.project_url || ''; if (post.access_type === 'paid') supabase.from('project_private').select('secret_url').eq('project_id', post.id).maybeSingle().then(({data}) => { if (data) $('#post-url').value = data.secret_url; }); $('#post-category').value = post.category; $('#post-tags').value = (post.tags || []).join(', ');
     $('#publish-button').innerHTML = 'Save changes <span>↗</span>'; $('#cancel-edit').classList.remove('hidden'); $('#post-title').focus(); $('.admin-card').scrollTo({top:0, behavior:'smooth'}); return;
   }
   if (deleteButton) {
@@ -164,7 +170,7 @@ async function boot() {
   }
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
-    const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null;
+    logVisit(supabase); const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null;
     await loadPosts();
     const channel = supabase.channel('public-posts-live').on('postgres_changes', {event:'*', schema:'public', table:'posts'}, async () => { await loadPosts(); if (isAdmin && adminDialog.open) renderAdminPosts(); }).subscribe((status) => {
       const label = $('#connection-label');
