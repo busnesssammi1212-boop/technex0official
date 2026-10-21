@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { logVisit, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
+import { logVisit, loadSupporters, initMaintenance, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
 const grid = $('#project-grid');
@@ -170,7 +170,7 @@ async function boot() {
   }
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
-    logVisit(supabase); const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null;
+    logVisit(supabase); loadSupporters(supabase); const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null; if (currentUser) isAdmin = await checkAdmin(currentUser); initMaintenance(supabase, () => isAdmin);
     await loadPosts();
     const channel = supabase.channel('public-posts-live').on('postgres_changes', {event:'*', schema:'public', table:'posts'}, async () => { await loadPosts(); if (isAdmin && adminDialog.open) renderAdminPosts(); }).subscribe((status) => {
       const label = $('#connection-label');
