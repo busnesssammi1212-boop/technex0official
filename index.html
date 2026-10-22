@@ -16,7 +16,7 @@
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
   <header class="topbar">
     <a class="brand" href="./" aria-label="Technex Official home"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a>
-    <nav class="nav-links" aria-label="Main navigation"><a href="#projects">Projects</a><a href="#hire">Hire me</a><a href="#donate">Donate</a><a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a><a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a></nav>
+    <nav class="nav-links" aria-label="Main navigation"><a href="#projects">Projects</a><a href="#about">About</a><a href="#hire">Hire me</a><a href="#donate">Donate</a><a href="https://discord.gg/DzrXTfEmYC" target="_blank" rel="noopener noreferrer">Discord ↗</a><a href="https://www.youtube.com/@TechnexOfficial12" target="_blank" rel="noopener noreferrer">YouTube ↗</a></nav>
     <button id="admin-open" class="button button-quiet" type="button">Admin Login <span>↗</span></button>
   </header>
 
@@ -35,6 +35,19 @@
       <div id="project-grid" class="project-grid" aria-live="polite"><div class="loading-card"><span class="spinner"></span><p>Loading projects from database…</p></div></div>
       <div id="empty-state" class="empty-state hidden"><div class="empty-icon">⌕</div><h3>No projects found</h3><p>Try a different search, or check back when new projects are published.</p></div>
       <div class="feed-footer"><span><span class="status-dot"></span> Database-synced project feed</span><span id="project-count" class="mono">0 PROJECTS</span></div>
+    </section>
+
+    <section id="about" class="about-section">
+      <div class="section-kicker">ABOUT US</div>
+      <h2>Technex <span>Ltd.</span></h2>
+      <p class="donate-copy">Technex Ltd. is a website developer group. We design, build and launch modern websites, community hubs and tools, from the first idea to a live deployment.</p>
+      <div class="tag-list about-tags"><span class="tag">Website development</span><span class="tag">Discord servers</span><span class="tag">Open-source projects</span></div>
+      <article class="team-card team-ceo"><div class="team-avatar">MY</div><div class="team-body"><span class="team-role">CEO</span><h3>Md Yakub Ansari</h3><p>Chief Executive Officer of Technex Ltd. Leads the group and sets the direction for every project.</p></div></article>
+      <div class="team-grid">
+        <article class="team-card"><div class="team-avatar">AR</div><div class="team-body"><span class="team-role">Website Founder</span><h3>Arif Rahman</h3><p>Founder of the Technex website.</p></div></article>
+        <article class="team-card"><div class="team-avatar">TR</div><div class="team-body"><span class="team-role">Co-Founder</span><h3>Tahmid Rahman</h3><p>Co-founder of Technex.</p></div></article>
+        <article class="team-card"><div class="team-avatar">RTC</div><div class="team-body"><span class="team-role">Developers</span><h3>RTC Creations<sup>™</sup></h3><p>The development team behind the Technex website and projects.</p></div></article>
+      </div>
     </section>
 
     <section id="hire" class="hire-section">
@@ -64,10 +77,17 @@
       </div>
     </section>
 
+    <section id="supporters" class="supporters-section">
+      <div class="section-kicker">THANK YOU</div>
+      <h2>Our <span>supporters.</span></h2>
+      <p class="donate-copy">People who helped Technex keep building free tools.</p>
+      <div id="supporter-list" class="supporter-grid"><p class="muted">Loading…</p></div>
+    </section>
+
     <section class="cta-strip"><div class="cta-icon">⌘</div><div><h3>Made something cool?</h3><p>Publish your project on GitHub and share it with the community.</p></div><a href="https://github.com/new" target="_blank" rel="noopener noreferrer" class="button button-outline">Create a GitHub repo ↗</a></section>
   </main>
 
-  <footer class="footer"><a class="brand footer-brand" href="./" aria-label="Technex Official home"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a><span>Built for creators, makers & curious minds.</span><span class="mono">© <span id="year"></span> TECHNEX</span></footer>
+  <footer class="footer"><a class="brand footer-brand" href="./" aria-label="Technex Official home"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a><span>Built for creators, makers & curious minds.</span><span class="mono">© <span id="year"></span> TECHNEX LTD.</span></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
