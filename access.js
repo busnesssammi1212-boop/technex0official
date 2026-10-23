@@ -57,6 +57,28 @@ export async function initAds(db, isAdmin) {
 }
 const adForm = (off) => ({ monetag_enabled: !off && $('#ad-m-on').checked, monetag_code: $('#ad-m-code').value.trim(), sponsor_enabled: !off && $('#ad-s-on').checked, sponsor_title: $('#ad-s-title').value.trim(), sponsor_text: $('#ad-s-text').value.trim(), sponsor_url: $('#ad-s-url').value.trim(), sponsor_label: $('#ad-s-label').value.trim() });
 
+// ===== Remember unlocked projects (so refresh / back keeps "View project") =====
+const unlocked = new Map();
+export const unlockedUrl = (id) => unlocked.get(id);
+const notifyUnlock = () => window.dispatchEvent(new Event('tnx-unlocked'));
+export async function restoreUnlocks(db, posts) {
+  const todo = posts.filter(p => p.access_type === 'paid' && !unlocked.has(p.id)); if (!todo.length) return;
+  if (geo.country === '??') await loadGeo();
+  let changed = false;
+  for (const p of todo) {
+    let key = localStorage.getItem('tnx_key_' + p.id);
+    if (!key) { // bought earlier: if the request was approved, pick the key up automatically
+      const code = localStorage.getItem('tnx_req_' + p.id);
+      if (code) { const { data } = await db.rpc('check_purchase', { p_code: code }); if (data?.[0]?.status === 'approved') key = data[0].access_key; }
+    }
+    if (!key) continue;
+    const { data: r } = await db.rpc('redeem_key', { p_key: key, p_project: p.id, p_device: device, p_country: geo.country, p_city: geo.city });
+    if (r?.ok) { unlocked.set(p.id, r.url); localStorage.setItem('tnx_key_' + p.id, key); changed = true; }
+    else if (r?.reason === 'invalid') localStorage.removeItem('tnx_key_' + p.id); // revoked or wrong key
+  }
+  if (changed) notifyUnlock();
+}
+
 export async function loadSupporters(db) {
   const box = $('#supporter-list'); if (!box) return;
   const { data, error } = await db.from('supporters').select('id,name,amount_text,message,created_at').order('created_at', { ascending: false }).limit(60);
@@ -98,6 +120,7 @@ export async function openUnlock(post, db) {
     say('#u-msg', 'Checking…');
     const { data } = await db.rpc('redeem_key', { p_key: key, p_project: post.id, p_device: device, p_country: geo.country, p_city: geo.city });
     if (!data?.ok) return say('#u-msg', data?.reason === 'device_limit' ? 'This key is already used on the maximum number of devices.' : 'Invalid or revoked key.', 'error-text');
+    unlocked.set(post.id, data.url); localStorage.setItem('tnx_key_' + post.id, key); notifyUnlock();
     const m = $('#u-msg', dlg); m.className = 'form-message success-text';
     m.innerHTML = `Unlocked. <a class="text-link" href="${esc(data.url)}" target="_blank" rel="noopener noreferrer">Open project ↗</a>`;
   };

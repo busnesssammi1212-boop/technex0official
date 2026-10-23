@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { logVisit, loadSupporters, initMaintenance, initAds, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
+import { logVisit, loadSupporters, initMaintenance, initAds, restoreUnlocks, unlockedUrl, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
 const grid = $('#project-grid');
@@ -53,7 +53,7 @@ function renderPosts() {
   if (!posts.length) { grid.classList.add('hidden'); emptyState.classList.remove('hidden'); return; }
   grid.classList.remove('hidden'); emptyState.classList.add('hidden');
   for (const post of posts) {
-    const url = safeUrl(post.project_url);
+    const url = safeUrl(post.project_url) || safeUrl(unlockedUrl(post.id));
     const paid = post.access_type === 'paid';
     const tags = (paid ? `<span class="tag paid-tag">PAID · ${escapeHtml(fmtPrice(post.price_text))}</span>` : '') + (post.tags || []).slice(0, 5).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
     const card = document.createElement('article');
@@ -61,7 +61,7 @@ function renderPosts() {
     card.innerHTML = `<div class="card-top"><div class="project-avatar">${escapeHtml(initials(post.title))}</div><span class="category-pill cat-${categoryClass(post.category)}">${escapeHtml(post.category)}</span></div>
       <h3>${escapeHtml(post.title)}</h3><p class="project-description">${escapeHtml(post.description)}</p>
       ${tags ? `<div class="tag-list">${tags}</div>` : '<div class="tag-list tag-list-empty"></div>'}
-      <div class="card-bottom"><span class="date-label"><span class="tiny-square"></span>${formatDate(post.created_at)}</span>${paid ? `<button class="project-link unlock-btn" type="button" data-unlock="${post.id}">Unlock 🔒</button>` : url ? `<a class="project-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">View project <span>↗</span></a>` : '<span class="muted">Invalid URL</span>'}</div>`;
+      <div class="card-bottom"><span class="date-label"><span class="tiny-square"></span>${formatDate(post.created_at)}</span>${paid && !url ? `<button class="project-link unlock-btn" type="button" data-unlock="${post.id}">Unlock 🔒</button>` : url ? `<a class="project-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">View project <span>↗</span></a>` : '<span class="muted">Invalid URL</span>'}</div>`;
     grid.append(card);
   }
 }
@@ -84,7 +84,7 @@ async function loadPosts() {
   if (!supabase) return;
   const { data, error } = await supabase.from('posts').select('id,title,description,project_url,category,tags,created_at,updated_at,access_type,price_text').order('created_at', {ascending:false});
   if (error) { grid.innerHTML = `<div class="error-card"><strong>Could not load projects.</strong><p>${escapeHtml(error.message)}</p><p>Check config.js and run schema.sql in Supabase.</p></div>`; $('#connection-label').textContent = 'Database connection error'; $('#connection-label').parentElement.classList.add('offline'); return; }
-  allPosts = data || []; renderPosts();
+  allPosts = data || []; renderPosts(); restoreUnlocks(supabase, allPosts);
   if (isAdmin && adminDialog.open) renderAdminPosts();
 }
 
@@ -160,6 +160,8 @@ $('#admin-post-list').addEventListener('click', async (event) => {
     if ($('#post-id').value === post.id) resetPostForm(); await loadPosts(); renderAdminPosts(); showToast('Project deleted.', 'success');
   }
 });
+
+window.addEventListener('tnx-unlocked', renderPosts);
 
 async function boot() {
   const looksConfigured = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-PROJECT-REF') && SUPABASE_ANON_KEY.length > 30 && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE');
