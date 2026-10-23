@@ -34,6 +34,29 @@ export function initMaintenance(db, isAdmin) {
   setInterval(mtTick, 1000); setInterval(() => pollMaintenance(db), 30000);
 }
 
+// ===== Ads: Monetag tag (admin pastes it) + Sponsored card (e.g. Design.com affiliate link) =====
+function runSnippet(html) {
+  const t = document.createElement('template'); t.innerHTML = html;
+  t.content.querySelectorAll('script').forEach(old => {
+    const s = document.createElement('script');
+    [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+    s.text = old.textContent; document.head.append(s); old.remove();
+  });
+  document.head.append(t.content);
+}
+function showSponsor(a) {
+  const el = $('#sponsor-slot'); if (!el) return;
+  let u = null; try { const x = new URL(a.sponsor_url); if (['https:', 'http:'].includes(x.protocol)) u = x.href; } catch {}
+  if (!a.sponsor_enabled || !u || !a.sponsor_title) { el.innerHTML = ''; return; }
+  el.innerHTML = `<article class="team-card sponsor-card"><div class="team-body"><span class="team-role">Sponsored</span><h3>${esc(a.sponsor_title)}</h3>${a.sponsor_text ? `<p>${esc(a.sponsor_text)}</p>` : ''}</div><a class="button button-outline" href="${esc(u)}" target="_blank" rel="sponsored noopener noreferrer">${esc(a.sponsor_label || 'Learn more')} <span>↗</span></a></article>`;
+}
+export async function initAds(db, isAdmin) {
+  const { data } = await db.rpc('get_ads'); const a = data || {};
+  showSponsor(a);
+  if (a.monetag_enabled && a.monetag_code && !isAdmin()) runSnippet(a.monetag_code); // never load ads for the admin (avoids accidental self-clicks)
+}
+const adForm = (off) => ({ monetag_enabled: !off && $('#ad-m-on').checked, monetag_code: $('#ad-m-code').value.trim(), sponsor_enabled: !off && $('#ad-s-on').checked, sponsor_title: $('#ad-s-title').value.trim(), sponsor_text: $('#ad-s-text').value.trim(), sponsor_url: $('#ad-s-url').value.trim(), sponsor_label: $('#ad-s-label').value.trim() });
+
 export async function loadSupporters(db) {
   const box = $('#supporter-list'); if (!box) return;
   const { data, error } = await db.from('supporters').select('id,name,amount_text,message,created_at').order('created_at', { ascending: false }).limit(60);
@@ -106,12 +129,14 @@ export async function renderAdminExtras(ctx) {
   const { db, getPosts, showToast } = ctx; const box = $('#admin-extra');
   box.innerHTML = '<p class="muted">Loading…</p>';
   const posts = getPosts(), title = Object.fromEntries(posts.map(p => [p.id, p.title])), paid = posts.filter(p => p.access_type === 'paid');
-  const [rq, ks, vs, sp, mtq] = await Promise.all([
+  const [rq, ks, vs, sp, mtq, adq] = await Promise.all([
     db.from('purchase_requests').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('access_keys').select('*, key_uses(country, city, last_used)').order('created_at', { ascending: false }),
     db.from('site_visits').select('visitor_id, country, city, created_at').order('created_at', { ascending: false }).limit(5000),
     db.from('supporters').select('*').order('created_at', { ascending: false }).limit(100),
-    db.rpc('get_maintenance')]);
+    db.rpc('get_maintenance'),
+    db.rpc('get_ads')]);
+  const ad = adq.data || {};
   const mOn = !!mtq.data?.active;
   const v = vs.data || [], by = {};
   for (const x of v) { const e = by[x.country || '??'] ||= { n: 0, s: new Set() }; e.n++; e.s.add(x.visitor_id); }
@@ -120,6 +145,15 @@ export async function renderAdminExtras(ctx) {
   const keyHtml = (ks.data || []).map(k => `<div class="xrow"><div><code>${esc(k.key_code)}</code><small>${esc(title[k.project_id] || '')} · ${esc(k.label || '')} · ${k.status} · devices ${k.key_uses.length}/${k.max_devices}${k.key_uses.length ? ' · ' + k.key_uses.map(u => esc(u.country || '??') + (u.city ? '/' + esc(u.city) : '') + ' ' + new Date(u.last_used).toLocaleDateString()).join(', ') : ''}</small></div><div class="admin-post-actions"><button class="mini-button" data-act="${k.status === 'active' ? 'revoke' : 'activate'}" data-id="${k.id}">${k.status === 'active' ? 'Revoke' : 'Activate'}</button><button class="mini-button mini-danger" data-act="delkey" data-id="${k.id}">Delete</button></div></div>`).join('') || '<p class="muted">No keys yet.</p>';
   box.innerHTML = `<div class="xsec"><div class="admin-list-head"><h3>Maintenance mode</h3><span class="mono">${mOn ? 'ON · ' + Math.ceil(mtq.data.seconds_left / 60) + ' MIN LEFT' : 'OFF'}</span></div>
     <div class="xrow"><input id="x-mnum" type="number" min="1" value="1"><select id="x-munit"><option value="1">minutes</option><option value="60" selected>hours</option><option value="1440">days</option></select><input id="x-mmsg" placeholder="Message for visitors (optional)" maxlength="200"><button class="mini-button" data-act="mstart">Start maintenance</button>${mOn ? '<button class="mini-button mini-danger" data-act="mend">End now</button>' : ''}</div></div>
+    <div class="xsec"><div class="admin-list-head"><h3>Ads</h3><span class="mono">${ad.monetag_enabled || ad.sponsor_enabled ? 'ON' : 'OFF'}</span></div>
+    <div class="xcol"><label class="xchk"><input id="ad-m-on" type="checkbox" ${ad.monetag_enabled ? 'checked' : ''}> Monetag ads ON</label>
+    <textarea id="ad-m-code" rows="4" placeholder="Paste the Monetag tag/script here" maxlength="4000">${esc(ad.monetag_code || '')}</textarea>
+    <label class="xchk"><input id="ad-s-on" type="checkbox" ${ad.sponsor_enabled ? 'checked' : ''}> Sponsored card (Design.com) ON</label>
+    <input id="ad-s-title" placeholder="Title" maxlength="80" value="${esc(ad.sponsor_title || 'Create a professional logo with Design.com')}">
+    <input id="ad-s-text" placeholder="Short text" maxlength="200" value="${esc(ad.sponsor_text || 'Design a logo and brand in minutes.')}">
+    <input id="ad-s-url" placeholder="Your Design.com affiliate link (https://...)" maxlength="500" value="${esc(ad.sponsor_url || '')}">
+    <input id="ad-s-label" placeholder="Button text" maxlength="30" value="${esc(ad.sponsor_label || 'Try Design.com')}">
+    <div class="row"><button class="mini-button" data-act="adsave">Save ads</button><button class="mini-button mini-danger" data-act="adsoff">Hide all ads now</button></div></div></div>
     <div class="xsec"><div class="admin-list-head"><h3>Payment requests</h3><span class="mono">${(rq.data || []).filter(r => r.status === 'pending').length} PENDING</span></div>${reqHtml}</div>
     <div class="xsec"><div class="admin-list-head"><h3>Access keys</h3></div>
     <div class="xrow"><select id="x-proj">${paid.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">No paid projects</option>'}</select><input id="x-label" placeholder="Label (e.g. buyer name)" maxlength="80"><button class="mini-button" data-act="gen">Generate key</button></div>${keyHtml}</div>
@@ -138,6 +172,7 @@ export async function renderAdminExtras(ctx) {
     if (act === 'delsup') { if (!confirm('Remove this supporter?')) return; r = await db.from('supporters').delete().eq('id', id); }
     if (act === 'mstart') { const n = Math.floor(+$('#x-mnum').value); if (!(n > 0)) return showToast('Enter a valid time.', 'error'); r = await db.rpc('admin_set_maintenance', { p_minutes: n * +$('#x-munit').value, p_message: $('#x-mmsg').value.trim() }); }
     if (act === 'mend') r = await db.rpc('admin_set_maintenance', { p_minutes: 0, p_message: '' });
+    if (act === 'adsave' || act === 'adsoff') r = await db.rpc('admin_set_ads', { p: adForm(act === 'adsoff') });
     if (act === 'delkey') { if (!confirm('Delete this key?')) return; r = await db.from('access_keys').delete().eq('id', id); }
     if (r.error) return showToast(r.error.message, 'error');
     showToast('Done.', 'success'); renderAdminExtras(ctx); loadSupporters(db); pollMaintenance(db);

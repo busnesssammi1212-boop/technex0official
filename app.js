@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { logVisit, loadSupporters, initMaintenance, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
+import { logVisit, loadSupporters, initMaintenance, initAds, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
 const grid = $('#project-grid');
@@ -170,7 +170,7 @@ async function boot() {
   }
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
-    logVisit(supabase); loadSupporters(supabase); const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null; if (currentUser) isAdmin = await checkAdmin(currentUser); initMaintenance(supabase, () => isAdmin);
+    logVisit(supabase); loadSupporters(supabase); const {data: {session}} = await supabase.auth.getSession(); currentUser = session?.user || null; if (currentUser) isAdmin = await checkAdmin(currentUser); initMaintenance(supabase, () => isAdmin); initAds(supabase, () => isAdmin);
     await loadPosts();
     const channel = supabase.channel('public-posts-live').on('postgres_changes', {event:'*', schema:'public', table:'posts'}, async () => { await loadPosts(); if (isAdmin && adminDialog.open) renderAdminPosts(); }).subscribe((status) => {
       const label = $('#connection-label');
@@ -183,6 +183,10 @@ async function boot() {
     console.error(error); $('#connection-label').textContent = 'Connection error'; grid.innerHTML = `<div class="error-card"><strong>Could not connect.</strong><p>${escapeHtml(error.message || 'Unknown error')}</p></div>`;
   }
 }
+let deferredInstall;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; $('#install-app').classList.remove('hidden'); });
+$('#install-app').addEventListener('click', async () => { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $('#install-app').classList.add('hidden'); });
+window.addEventListener('appinstalled', () => $('#install-app').classList.add('hidden'));
 $('#copy-wallet')?.addEventListener('click', async () => {
   const address = $('#wallet-address').textContent.trim();
   try { await navigator.clipboard.writeText(address); showToast('Wallet address copied.', 'success'); }
