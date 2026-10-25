@@ -3,6 +3,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { logVisit, loadSupporters, initMaintenance, initAds, restoreUnlocks, unlockedUrl, isUnlocked, savePost, removeFiles, downloadPaid, openUnlock, renderAdminExtras, fmtPrice } from './access.js';
 
 const $ = (selector) => document.querySelector(selector);
+const setText = (selector, value) => { const e = $(selector); if (e) e.textContent = value; };
 const grid = $('#project-grid');
 const emptyState = $('#empty-state');
 const authDialog = $('#auth-dialog');
@@ -97,7 +98,7 @@ async function checkAdmin(user) {
   return data === true;
 }
 function resetPostForm() {
-  $('#post-form').reset(); $('#post-id').value = ''; $('#post-file-cur').textContent = ''; $('#publish-button').innerHTML = 'Publish project <span>↗</span>';
+  $('#post-form').reset(); $('#post-id').value = ''; setText('#post-file-cur', ''); $('#publish-button').innerHTML = 'Publish project <span>↗</span>';
   $('#cancel-edit').classList.add('hidden'); setMessage('#post-message', '');
 }
 function openAdmin() { resetPostForm(); renderAdminPosts(); renderAdminExtras({ db: supabase, getPosts: () => allPosts, showToast }); if (!adminDialog.open) adminDialog.showModal(); }
@@ -145,7 +146,7 @@ $('#admin-post-list').addEventListener('click', async (event) => {
   const editButton = event.target.closest('[data-edit]'); const deleteButton = event.target.closest('[data-delete]');
   if (editButton) {
     const post = allPosts.find(item => item.id === editButton.dataset.edit); if (!post) return;
-    $('#post-id').value = post.id; $('#post-title').value = post.title; $('#post-description').value = post.description; $('#post-access').value = post.access_type || 'free'; $('#post-price').value = post.price_text || ''; $('#post-url').value = post.project_url || ''; $('#post-file-cur').textContent = post.file_name ? 'Current file: ' + post.file_name : ''; if (post.access_type === 'paid') supabase.from('project_private').select('secret_url').eq('project_id', post.id).maybeSingle().then(({data}) => { if (data) $('#post-url').value = data.secret_url; }); $('#post-category').value = post.category; $('#post-tags').value = (post.tags || []).join(', ');
+    $('#post-id').value = post.id; $('#post-title').value = post.title; $('#post-description').value = post.description; $('#post-access').value = post.access_type || 'free'; $('#post-price').value = post.price_text || ''; $('#post-url').value = post.project_url || ''; setText('#post-file-cur', post.file_name ? 'Current file: ' + post.file_name : ''); if (post.access_type === 'paid') supabase.from('project_private').select('secret_url').eq('project_id', post.id).maybeSingle().then(({data}) => { if (data) $('#post-url').value = data.secret_url; }); $('#post-category').value = post.category; $('#post-tags').value = (post.tags || []).join(', ');
     $('#publish-button').innerHTML = 'Save changes <span>↗</span>'; $('#cancel-edit').classList.remove('hidden'); $('#post-title').focus(); $('.admin-card').scrollTo({top:0, behavior:'smooth'}); return;
   }
   if (deleteButton) {
@@ -183,9 +184,9 @@ async function boot() {
   }
 }
 let deferredInstall;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; $('#install-app').classList.remove('hidden'); });
-$('#install-app').addEventListener('click', async () => { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $('#install-app').classList.add('hidden'); });
-window.addEventListener('appinstalled', () => $('#install-app').classList.add('hidden'));
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; $('#install-app')?.classList.remove('hidden'); });
+$('#install-app')?.addEventListener('click', async () => { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $('#install-app')?.classList.add('hidden'); });
+window.addEventListener('appinstalled', () => $('#install-app')?.classList.add('hidden'));
 $('#copy-wallet')?.addEventListener('click', async () => {
   const address = $('#wallet-address').textContent.trim();
   try { await navigator.clipboard.writeText(address); showToast('Wallet address copied.', 'success'); }

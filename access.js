@@ -59,7 +59,8 @@ const adForm = (off) => ({ monetag_enabled: !off && $('#ad-m-on').checked, monet
 
 // ===== Remember unlocked projects (so refresh / back keeps "View project") =====
 const unlocked = new Map();
-export const unlockedUrl = (id) => unlocked.get(id);
+export const unlockedUrl = (id) => unlocked.get(id)?.url ?? null;
+export const isUnlocked = (id) => unlocked.has(id);
 const notifyUnlock = () => window.dispatchEvent(new Event('tnx-unlocked'));
 export async function restoreUnlocks(db, posts) {
   const todo = posts.filter(p => p.access_type === 'paid' && !unlocked.has(p.id)); if (!todo.length) return;
@@ -73,16 +74,67 @@ export async function restoreUnlocks(db, posts) {
     }
     if (!key) continue;
     const { data: r } = await db.rpc('redeem_key', { p_key: key, p_project: p.id, p_device: device, p_country: geo.country, p_city: geo.city });
-    if (r?.ok) { unlocked.set(p.id, r.url); localStorage.setItem('tnx_key_' + p.id, key); changed = true; }
+    if (r?.ok) { unlocked.set(p.id, { url: r.url, hasFile: !!r.has_file }); localStorage.setItem('tnx_key_' + p.id, key); changed = true; }
     else if (r?.reason === 'invalid') localStorage.removeItem('tnx_key_' + p.id); // revoked or wrong key
   }
   if (changed) notifyUnlock();
 }
 
+// ===== Project files: upload (admin) + download (paid, key-protected) =====
+const B_PUBLIC = 'project-files-public', B_PRIVATE = 'project-files-private', MAX_FILE = 50 * 1024 * 1024;
+async function cleanupFiles(db, pid, keepPath) {
+  for (const b of [B_PUBLIC, B_PRIVATE]) {
+    const { data } = await db.storage.from(b).list(pid);
+    const del = (data || []).map(f => `${pid}/${f.name}`).filter(p => p !== keepPath);
+    if (del.length) await db.storage.from(b).remove(del);
+  }
+}
+export const removeFiles = (db, pid) => cleanupFiles(db, pid, null);
+
+// Validates the admin form, uploads the file (if any) and saves the post. Returns { error } (null on success).
+export async function savePost(db, { allPosts, safeUrl }) {
+  const title = $('#post-title').value.trim(), description = $('#post-description').value.trim(), url = safeUrl($('#post-url').value.trim());
+  const paid = $('#post-access').value === 'paid', id = $('#post-id').value, file = $('#post-file')?.files?.[0], rm = !!$('#post-file-rm')?.checked;
+  const ex = id ? allPosts.find(p => p.id === id) : null;
+  const keep = !!(ex?.file_name && !file && !rm);
+  if (!title || !description) return { error: 'Enter a title and a description.' };
+  if (!url && !file && !keep) return { error: 'Add a project URL, or upload a project file.' };
+  if (file && file.size > MAX_FILE) return { error: 'File is too large (max 50 MB).' };
+  if (keep && (ex.access_type === 'paid') !== paid) return { error: 'You changed Free/Paid. Please upload the file again.' };
+  const pid = id || crypto.randomUUID(), bucket = paid ? B_PRIVATE : B_PUBLIC;
+  const fields = { title, description, category: $('#post-category').value, tags: [...new Set($('#post-tags').value.split(',').map(t => t.trim()).filter(Boolean))].slice(0, 10),
+    access_type: paid ? 'paid' : 'free', price_text: paid ? ($('#post-price').value.trim() || null) : null, project_url: paid ? null : url };
+  let path = null;
+  if (file) {
+    path = `${pid}/${Date.now()}-${file.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80)}`;
+    const up = await db.storage.from(bucket).upload(path, file, { contentType: file.type || 'application/octet-stream' });
+    if (up.error) return { error: 'Upload failed: ' + up.error.message };
+    Object.assign(fields, { file_name: file.name.slice(0, 120), file_size: file.size, file_path: paid ? null : path });
+  } else if (!keep) Object.assign(fields, { file_name: null, file_size: null, file_path: null });
+  const r = id ? await db.from('posts').update(fields).eq('id', pid).select('id').single() : await db.from('posts').insert({ id: pid, ...fields }).select('id').single();
+  if (r.error) { if (path) await db.storage.from(bucket).remove([path]); return { error: r.error.message }; }
+  let pr;
+  if (paid) { const priv = { project_id: pid, secret_url: url }; if (file) priv.file_path = path; else if (!keep) priv.file_path = null; pr = await db.from('project_private').upsert(priv); }
+  else pr = await db.from('project_private').delete().eq('project_id', pid);
+  if (pr.error) return { error: pr.error.message };
+  if (file || rm || (ex && ex.access_type !== fields.access_type)) await cleanupFiles(db, pid, path);
+  return { error: null };
+}
+
+export async function downloadPaid(id, onError = () => {}) {
+  const key = localStorage.getItem('tnx_key_' + id); if (!key) return onError('Enter your key first.');
+  try {
+    const r = await fetch('/api/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, project: id, device }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.url) return onError(j.error || 'Download failed.');
+    location.href = j.url;
+  } catch { onError('Download failed.'); }
+}
+
 export async function loadSupporters(db) {
   const box = $('#supporter-list'); if (!box) return;
   const { data, error } = await db.from('supporters').select('id,name,amount_text,message,created_at').order('created_at', { ascending: false }).limit(60);
-  if (error) { box.innerHTML = ''; return; }
+  if (error) { box.innerHTML = '<p class="muted">Supporters list is unavailable right now.</p>'; return; }
   box.innerHTML = data.length ? data.map(s => `<div class="sup-card"><div class="project-avatar">${esc((s.name.trim()[0] || '?').toUpperCase())}</div><div class="sup-info"><strong>${esc(s.name)}</strong>${s.amount_text ? `<span class="tag">${esc(s.amount_text)}</span>` : ''}${s.message ? `<p>${esc(s.message)}</p>` : ''}</div></div>`).join('') : '<p class="muted">No supporters listed yet. Be the first one — use the Donate section above.</p>';
 }
 
@@ -120,9 +172,10 @@ export async function openUnlock(post, db) {
     say('#u-msg', 'Checking…');
     const { data } = await db.rpc('redeem_key', { p_key: key, p_project: post.id, p_device: device, p_country: geo.country, p_city: geo.city });
     if (!data?.ok) return say('#u-msg', data?.reason === 'device_limit' ? 'This key is already used on the maximum number of devices.' : 'Invalid or revoked key.', 'error-text');
-    unlocked.set(post.id, data.url); localStorage.setItem('tnx_key_' + post.id, key); notifyUnlock();
+    unlocked.set(post.id, { url: data.url, hasFile: !!data.has_file }); localStorage.setItem('tnx_key_' + post.id, key); notifyUnlock();
     const m = $('#u-msg', dlg); m.className = 'form-message success-text';
-    m.innerHTML = `Unlocked. <a class="text-link" href="${esc(data.url)}" target="_blank" rel="noopener noreferrer">Open project ↗</a>`;
+    m.innerHTML = `Unlocked. ${data.url ? `<a class="text-link" href="${esc(data.url)}" target="_blank" rel="noopener noreferrer">Open project ↗</a>` : ''} ${data.has_file ? '<button id="u-dl" class="mini-button" type="button">⬇ Download file</button>' : ''}`;
+    $('#u-dl', dlg)?.addEventListener('click', () => downloadPaid(post.id, (msg) => say('#u-msg', msg, 'error-text')));
   };
 
   $('#u-buy', dlg).onclick = async () => {
