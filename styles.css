@@ -55,7 +55,7 @@
 .an-item{border:1px solid #27372c;border-left:3px solid #8af5b5;background:#0b110d;border-radius:10px;padding:14px 16px;margin:14px 0}.an-item h3{font-size:16px;letter-spacing:-.3px;margin:0 0 6px;overflow-wrap:anywhere}.an-item p{margin:0 0 12px;font-size:12px;line-height:1.8;color:#a3b2a9;white-space:pre-line;overflow-wrap:anywhere}.an-item .button{padding:9px 14px}.an-update{border-left-color:#9fd7ff}.an-warning{border-left-color:#f1d29b;background:#15110a}
 
 /* ===== logo boxes: full-height side rails + bottom bar that stays fixed while scrolling ===== */
-:root{--dock-bar:76px;--dock-tile:clamp(44px,calc((100vh - var(--dock-bar) - 70px) / 5 - 10px),120px);--dock-rail:calc(var(--dock-tile) + 56px)}
+:root{--dock-bar:76px;--dock-tile:clamp(34px,calc((100vh - var(--dock-bar) - 70px) / var(--dock-n,5) - 10px),120px);--dock-rail:calc(var(--dock-tile) + 56px)}
 body.has-dock{padding-left:var(--dock-rail);padding-right:var(--dock-rail);padding-bottom:var(--dock-bar)}
 .dock{position:fixed;z-index:25;display:flex}
 .dock-handle{border:1px solid #2a3c30;background:#0a100d;color:#8af5b5;font:700 12px var(--mono);padding:10px 8px;cursor:pointer}.dock-handle:hover{background:#13271b}
@@ -77,3 +77,6 @@ a.dock-tile:hover{transform:scale(1.04);border-color:#8af5b5}.dock-tile img{disp
 body.has-dock .hp-fab{right:calc(var(--dock-rail) + 16px);bottom:calc(var(--dock-bar) + 16px)}
 body.has-dock .hp-panel{right:calc(var(--dock-rail) + 16px);bottom:calc(var(--dock-bar) + 82px);height:min(580px,calc(100vh - var(--dock-bar) - 110px))}
 @media(max-width:700px){:root{--dock-bar:64px;--dock-rail:0px}.dock.left,.dock.right{display:none}body.has-dock{padding-left:0;padding-right:0}body.has-dock .hp-fab{right:12px}body.has-dock .hp-panel{right:12px}}
+
+.dock.bottom .dock-box{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.dock.bottom .dock-box::-webkit-scrollbar{display:none}
+.dock.bottom .dock-tile:first-child{margin-left:auto}.dock.bottom .dock-tile:last-child{margin-right:auto}
