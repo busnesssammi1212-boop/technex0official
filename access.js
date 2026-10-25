@@ -1,4 +1,5 @@
 // Paid-project unlock flow (visitors) + admin review panel (requests, keys, visitors).
+import { DOCK_ITEMS, initDock } from './dock.js';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v = '') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Price shown to visitors: a bare number like 10 or $10 becomes "10 USDT"; anything else (e.g. 0.01 ETH) is shown as typed.
@@ -208,6 +209,8 @@ export async function showAnnouncements(db) {
   andlg.showModal();
 }
 
+const dockForm = (off) => ({ enabled: !off && $('#dk-on').checked, title: $('#dk-title').value.trim(), items: Object.fromEntries(DOCK_ITEMS.map(i => [i.key, { on: $('#dk-on-' + i.key).checked, url: $('#dk-url-' + i.key).value.trim() }])) });
+
 export async function loadSupporters(db) {
   const box = $('#supporter-list'); if (!box) return;
   const { data, error } = await db.from('supporters').select('id,name,amount_text,message,created_at').order('created_at', { ascending: false }).limit(60);
@@ -282,7 +285,7 @@ export async function renderAdminExtras(ctx) {
   const { db, getPosts, showToast } = ctx; const box = $('#admin-extra');
   box.innerHTML = '<p class="muted">Loading…</p>';
   const posts = getPosts(), title = Object.fromEntries(posts.map(p => [p.id, p.title])), paid = posts.filter(p => p.access_type === 'paid');
-  const [rq, ks, vs, sp, mtq, adq, stq, anq] = await Promise.all([
+  const [rq, ks, vs, sp, mtq, adq, stq, anq, dkq] = await Promise.all([
     db.from('purchase_requests').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('access_keys').select('*, key_uses(country, city, last_used)').order('created_at', { ascending: false }),
     db.from('site_visits').select('visitor_id, country, city, created_at').order('created_at', { ascending: false }).limit(5000),
@@ -290,7 +293,9 @@ export async function renderAdminExtras(ctx) {
     db.rpc('get_maintenance'),
     db.rpc('get_ads'),
     db.from('staff').select('id,username,display_name,perms,active,last_login').order('created_at', { ascending: false }),
-    db.from('announcements').select('*').order('created_at', { ascending: false }).limit(50)]);
+    db.from('announcements').select('*').order('created_at', { ascending: false }).limit(50),
+    db.rpc('get_dock')]);
+  const dk = dkq.data || {};
   const ad = adq.data || {};
   const mOn = !!mtq.data?.active;
   const v = vs.data || [], by = {};
@@ -300,6 +305,11 @@ export async function renderAdminExtras(ctx) {
   const keyHtml = (ks.data || []).map(k => `<div class="xrow"><div><code>${esc(k.key_code)}</code><small>${esc(title[k.project_id] || '')} · ${esc(k.label || '')} · ${k.status} · devices ${k.key_uses.length}/${k.max_devices}${k.key_uses.length ? ' · ' + k.key_uses.map(u => esc(u.country || '??') + (u.city ? '/' + esc(u.city) : '') + ' ' + new Date(u.last_used).toLocaleDateString()).join(', ') : ''}</small></div><div class="admin-post-actions"><button class="mini-button" data-act="${k.status === 'active' ? 'revoke' : 'activate'}" data-id="${k.id}">${k.status === 'active' ? 'Revoke' : 'Activate'}</button><button class="mini-button mini-danger" data-act="delkey" data-id="${k.id}">Delete</button></div></div>`).join('') || '<p class="muted">No keys yet.</p>';
   box.innerHTML = `<div class="xsec"><div class="admin-list-head"><h3>Maintenance mode</h3><span class="mono">${mOn ? 'ON · ' + Math.ceil(mtq.data.seconds_left / 60) + ' MIN LEFT' : 'OFF'}</span></div>
     <div class="xrow"><input id="x-mnum" type="number" min="1" value="1"><select id="x-munit"><option value="1">minutes</option><option value="60" selected>hours</option><option value="1440">days</option></select><input id="x-mmsg" placeholder="Message for visitors (optional)" maxlength="200"><button class="mini-button" data-act="mstart">Start maintenance</button>${mOn ? '<button class="mini-button mini-danger" data-act="mend">End now</button>' : ''}</div></div>
+    <div class="xsec"><div class="admin-list-head"><h3>Logo box (bottom-right)</h3><span class="mono">${dk.enabled ? 'ON' : 'OFF'}</span></div>
+    <div class="xcol"><label class="xchk"><input id="dk-on" type="checkbox" ${dk.enabled ? 'checked' : ''}> Show the logo box on the website</label>
+    <input id="dk-title" placeholder="Box title (optional)" maxlength="30" value="${esc(dk.title || '')}">
+    ${DOCK_ITEMS.map(i => { const it = dk.items?.[i.key] || {}; return `<div class="xrow"><label class="xchk"><input type="checkbox" id="dk-on-${i.key}" ${it.on ? 'checked' : ''}> <img src="${i.img}" alt="" width="28" height="28" class="dk-thumb"> ${esc(i.name)}</label><input id="dk-url-${i.key}" placeholder="Link when clicked (optional) https://..." maxlength="500" value="${esc(it.url || '')}"></div>`; }).join('')}
+    <div class="row"><button class="mini-button" data-act="dksave">Save logo box</button><button class="mini-button mini-danger" data-act="dkoff">Turn OFF now</button></div></div></div>
     <div class="xsec"><div class="admin-list-head"><h3>Announcements</h3><span class="mono">${(anq.data || []).filter(a => a.active && (!a.ends_at || new Date(a.ends_at) > new Date())).length} LIVE</span></div>
     <div class="xcol"><input id="an-title" placeholder="Title (e.g. New project released!)" maxlength="100">
     <textarea id="an-msg" rows="3" placeholder="Message visitors will see" maxlength="600"></textarea>
@@ -342,6 +352,7 @@ export async function renderAdminExtras(ctx) {
     if (act === 'mstart') { const n = Math.floor(+$('#x-mnum').value); if (!(n > 0)) return showToast('Enter a valid time.', 'error'); r = await db.rpc('admin_set_maintenance', { p_minutes: n * +$('#x-munit').value, p_message: $('#x-mmsg').value.trim() }); }
     if (act === 'mend') r = await db.rpc('admin_set_maintenance', { p_minutes: 0, p_message: '' });
     if (act === 'adsave' || act === 'adsoff') r = await db.rpc('admin_set_ads', { p: adForm(act === 'adsoff') });
+    if (act === 'dksave' || act === 'dkoff') { r = await db.rpc('admin_set_dock', { p: dockForm(act === 'dkoff') }); if (!r.error) initDock(db); }
     if (act === 'ancreate') { const t = $('#an-title').value.trim(), m = $('#an-msg').value.trim(); if (!t || !m) return showToast('Enter a title and a message.', 'error'); const h = +$('#an-end').value; r = await db.from('announcements').insert({ title: t, message: m, kind: $('#an-kind').value, link_url: $('#an-url').value.trim() || null, link_label: $('#an-label').value.trim() || null, ends_at: h ? new Date(Date.now() + h * 3600000).toISOString() : null }); }
     if (act === 'antoggle') r = await db.from('announcements').update({ active: b.dataset.on === '1' }).eq('id', id);
     if (act === 'andel') { if (!confirm('Delete this announcement?')) return; r = await db.from('announcements').delete().eq('id', id); }
