@@ -84,5 +84,11 @@
     </article>
   </main>
   <footer class="footer"><a class="brand footer-brand" href="./"><img class="brand-logo" src="logo.png" alt="Technex" /><b>OFFICIAL</b></a><span class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="mailto:technexofficial12@gmail.com">Contact</a></span><span class="mono">© TECHNEX LTD.</span></footer>
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+    import { initDock } from './dock.js';
+    initDock(createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
+  </script>
 </body>
 </html>

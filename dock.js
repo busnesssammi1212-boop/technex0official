@@ -32,16 +32,18 @@ const safeUrl = (v) => { try { const u = new URL(v); return ['https:', 'http:'].
 
 export async function initDock(db) {
   const { data } = await db.rpc('get_dock'); const d = data || {};
-  document.getElementById('site-dock')?.remove();
+  document.querySelectorAll('.dock').forEach(e => e.remove());
   if (!d.enabled) return;
   const items = DOCK_ITEMS.filter(i => d.items?.[i.key]?.on);
   if (!items.length) return;
-  const wrap = document.createElement('aside'); wrap.id = 'site-dock'; wrap.className = 'dock';
-  wrap.innerHTML = `<button class="dock-handle" type="button" aria-label="Show or hide the logo box" aria-expanded="true">&lt;/&gt;</button><div class="dock-box">${d.title ? `<div class="dock-title">${esc(d.title)}</div>` : ''}${items.map(i => {
-    const u = safeUrl(d.items[i.key].url), img = `<img src="${i.img}" alt="${esc(i.name)}" width="52" height="52" decoding="async">`;
-    return u ? `<a class="dock-tile" href="${esc(u)}" target="_blank" rel="sponsored noopener noreferrer" title="${esc(i.name)}">${img}</a>` : `<span class="dock-tile" title="${esc(i.name)}">${img}</span>`;
-  }).join('')}</div>`;
-  document.body.append(wrap);
-  const h = wrap.querySelector('.dock-handle');
-  h.onclick = () => { const c = wrap.classList.toggle('collapsed'); h.setAttribute('aria-expanded', String(!c)); }; // refresh brings the box back
+  for (const side of ['left', 'right']) { // same logos on both sides of the page
+    const wrap = document.createElement('aside'); wrap.className = 'dock ' + side; wrap.id = 'site-dock-' + side;
+    wrap.innerHTML = `<button class="dock-handle" type="button" aria-label="Show or hide the logo box" aria-expanded="true">&lt;/&gt;</button><div class="dock-box">${d.title ? `<div class="dock-title">${esc(d.title)}</div>` : ''}${items.map(i => {
+      const u = safeUrl(d.items[i.key].url), img = `<img src="${i.img}" alt="${esc(i.name)}" width="72" height="72" decoding="async">`;
+      return u ? `<a class="dock-tile" href="${esc(u)}" target="_blank" rel="sponsored noopener noreferrer" title="${esc(i.name)}">${img}</a>` : `<span class="dock-tile" title="${esc(i.name)}">${img}</span>`;
+    }).join('')}</div>`;
+    document.body.append(wrap);
+    const h = wrap.querySelector('.dock-handle');
+    h.onclick = () => { const c = wrap.classList.toggle('collapsed'); h.setAttribute('aria-expanded', String(!c)); }; // refresh brings the box back
+  }
 }
