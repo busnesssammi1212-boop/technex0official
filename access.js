@@ -191,6 +191,23 @@ async function staffLoad() {
   }
 }
 
+// ===== Announcements: shown when a visitor opens the site (once per announcement) =====
+const andlg = document.createElement('dialog'); andlg.className = 'modal'; andlg.id = 'announce-dialog'; document.body.append(andlg);
+let anShown = [];
+andlg.addEventListener('close', () => { try { const seen = JSON.parse(localStorage.getItem('tnx_ann_seen') || '[]'); localStorage.setItem('tnx_ann_seen', JSON.stringify([...new Set([...seen, ...anShown])].slice(-50))); } catch {} });
+export async function showAnnouncements(db) {
+  if (!ov.classList.contains('hidden')) return; // the maintenance page is showing
+  const { data, error } = await db.from('announcements').select('id,title,message,kind,link_url,link_label').order('created_at', { ascending: false }).limit(5);
+  if (error || !data?.length) return;
+  let seen = []; try { seen = JSON.parse(localStorage.getItem('tnx_ann_seen') || '[]'); } catch {}
+  const list = data.filter(a => !seen.includes(a.id)); if (!list.length) return;
+  anShown = list.map(a => a.id);
+  const icon = { info: '📢', update: '✨', warning: '⚠️' };
+  andlg.innerHTML = `<div class="modal-card"><button class="modal-close" type="button" data-x aria-label="Close">×</button><div class="section-kicker">ANNOUNCEMENT${list.length > 1 ? 'S' : ''}</div>${list.map(a => `<div class="an-item an-${esc(a.kind)}"><h3>${icon[a.kind] || '📢'} ${esc(a.title)}</h3><p>${esc(a.message)}</p>${a.link_url ? `<a class="button button-outline" href="${esc(a.link_url)}" target="_blank" rel="noopener noreferrer">${esc(a.link_label || 'Learn more')} <span>↗</span></a>` : ''}</div>`).join('')}<button id="an-ok" class="button button-primary button-full" type="button">Got it</button></div>`;
+  $('[data-x]', andlg).onclick = () => andlg.close(); $('#an-ok', andlg).onclick = () => andlg.close();
+  andlg.showModal();
+}
+
 export async function loadSupporters(db) {
   const box = $('#supporter-list'); if (!box) return;
   const { data, error } = await db.from('supporters').select('id,name,amount_text,message,created_at').order('created_at', { ascending: false }).limit(60);
@@ -265,14 +282,15 @@ export async function renderAdminExtras(ctx) {
   const { db, getPosts, showToast } = ctx; const box = $('#admin-extra');
   box.innerHTML = '<p class="muted">Loading…</p>';
   const posts = getPosts(), title = Object.fromEntries(posts.map(p => [p.id, p.title])), paid = posts.filter(p => p.access_type === 'paid');
-  const [rq, ks, vs, sp, mtq, adq, stq] = await Promise.all([
+  const [rq, ks, vs, sp, mtq, adq, stq, anq] = await Promise.all([
     db.from('purchase_requests').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('access_keys').select('*, key_uses(country, city, last_used)').order('created_at', { ascending: false }),
     db.from('site_visits').select('visitor_id, country, city, created_at').order('created_at', { ascending: false }).limit(5000),
     db.from('supporters').select('*').order('created_at', { ascending: false }).limit(100),
     db.rpc('get_maintenance'),
     db.rpc('get_ads'),
-    db.from('staff').select('id,username,display_name,perms,active,last_login').order('created_at', { ascending: false })]);
+    db.from('staff').select('id,username,display_name,perms,active,last_login').order('created_at', { ascending: false }),
+    db.from('announcements').select('*').order('created_at', { ascending: false }).limit(50)]);
   const ad = adq.data || {};
   const mOn = !!mtq.data?.active;
   const v = vs.data || [], by = {};
@@ -282,6 +300,14 @@ export async function renderAdminExtras(ctx) {
   const keyHtml = (ks.data || []).map(k => `<div class="xrow"><div><code>${esc(k.key_code)}</code><small>${esc(title[k.project_id] || '')} · ${esc(k.label || '')} · ${k.status} · devices ${k.key_uses.length}/${k.max_devices}${k.key_uses.length ? ' · ' + k.key_uses.map(u => esc(u.country || '??') + (u.city ? '/' + esc(u.city) : '') + ' ' + new Date(u.last_used).toLocaleDateString()).join(', ') : ''}</small></div><div class="admin-post-actions"><button class="mini-button" data-act="${k.status === 'active' ? 'revoke' : 'activate'}" data-id="${k.id}">${k.status === 'active' ? 'Revoke' : 'Activate'}</button><button class="mini-button mini-danger" data-act="delkey" data-id="${k.id}">Delete</button></div></div>`).join('') || '<p class="muted">No keys yet.</p>';
   box.innerHTML = `<div class="xsec"><div class="admin-list-head"><h3>Maintenance mode</h3><span class="mono">${mOn ? 'ON · ' + Math.ceil(mtq.data.seconds_left / 60) + ' MIN LEFT' : 'OFF'}</span></div>
     <div class="xrow"><input id="x-mnum" type="number" min="1" value="1"><select id="x-munit"><option value="1">minutes</option><option value="60" selected>hours</option><option value="1440">days</option></select><input id="x-mmsg" placeholder="Message for visitors (optional)" maxlength="200"><button class="mini-button" data-act="mstart">Start maintenance</button>${mOn ? '<button class="mini-button mini-danger" data-act="mend">End now</button>' : ''}</div></div>
+    <div class="xsec"><div class="admin-list-head"><h3>Announcements</h3><span class="mono">${(anq.data || []).filter(a => a.active && (!a.ends_at || new Date(a.ends_at) > new Date())).length} LIVE</span></div>
+    <div class="xcol"><input id="an-title" placeholder="Title (e.g. New project released!)" maxlength="100">
+    <textarea id="an-msg" rows="3" placeholder="Message visitors will see" maxlength="600"></textarea>
+    <div class="xrow"><select id="an-kind"><option value="info">📢 Notice</option><option value="update">✨ Update</option><option value="warning">⚠️ Important</option></select>
+    <select id="an-end"><option value="0">Never expires</option><option value="1">Expires in 1 hour</option><option value="24">Expires in 1 day</option><option value="72">Expires in 3 days</option><option value="168">Expires in 7 days</option><option value="720">Expires in 30 days</option></select></div>
+    <input id="an-url" placeholder="Button link (optional) https://..." maxlength="500"><input id="an-label" placeholder="Button text (optional, e.g. Learn more)" maxlength="30">
+    <div class="row"><button class="mini-button" data-act="ancreate">Publish announcement</button></div></div>
+    ${(anq.data || []).map(a => { const expired = a.ends_at && new Date(a.ends_at) <= new Date(); return `<div class="xrow"><div><strong>${esc(a.title)}</strong><small>${esc(a.message.slice(0, 120))}${a.message.length > 120 ? '…' : ''}<br>${esc(a.kind)} · ${!a.active ? 'HIDDEN' : expired ? 'EXPIRED' : 'LIVE'}${a.ends_at ? ' · ends ' + esc(new Date(a.ends_at).toLocaleString()) : ''} · ${esc(new Date(a.created_at).toLocaleDateString())}</small></div><div class="admin-post-actions"><button class="mini-button" data-act="antoggle" data-id="${a.id}" data-on="${a.active ? 0 : 1}">${a.active ? 'Hide' : 'Show'}</button><button class="mini-button mini-danger" data-act="andel" data-id="${a.id}">Delete</button></div></div>`; }).join('')}</div>
     <div class="xsec"><div class="admin-list-head"><h3>Staff accounts</h3><span class="mono">${(stq.data || []).length} STAFF</span></div>
     <div class="xcol"><input id="x-su" placeholder="Username (e.g. rahim)" maxlength="30"><input id="x-sn" placeholder="Display name (optional)" maxlength="60">
     <label class="xchk"><input id="x-sp0" type="checkbox" checked> Can see visitors (who, when, country)</label>
@@ -316,6 +342,9 @@ export async function renderAdminExtras(ctx) {
     if (act === 'mstart') { const n = Math.floor(+$('#x-mnum').value); if (!(n > 0)) return showToast('Enter a valid time.', 'error'); r = await db.rpc('admin_set_maintenance', { p_minutes: n * +$('#x-munit').value, p_message: $('#x-mmsg').value.trim() }); }
     if (act === 'mend') r = await db.rpc('admin_set_maintenance', { p_minutes: 0, p_message: '' });
     if (act === 'adsave' || act === 'adsoff') r = await db.rpc('admin_set_ads', { p: adForm(act === 'adsoff') });
+    if (act === 'ancreate') { const t = $('#an-title').value.trim(), m = $('#an-msg').value.trim(); if (!t || !m) return showToast('Enter a title and a message.', 'error'); const h = +$('#an-end').value; r = await db.from('announcements').insert({ title: t, message: m, kind: $('#an-kind').value, link_url: $('#an-url').value.trim() || null, link_label: $('#an-label').value.trim() || null, ends_at: h ? new Date(Date.now() + h * 3600000).toISOString() : null }); }
+    if (act === 'antoggle') r = await db.from('announcements').update({ active: b.dataset.on === '1' }).eq('id', id);
+    if (act === 'andel') { if (!confirm('Delete this announcement?')) return; r = await db.from('announcements').delete().eq('id', id); }
     if (act === 'stcreate') { const perms = ['visitors', 'requests'].filter((p, i) => $('#x-sp' + i).checked); r = await db.rpc('admin_create_staff', { p_username: $('#x-su').value, p_display: $('#x-sn').value, p_perms: perms }); if (!r.error) prompt('Staff login for "' + r.data.username + '"\nPassword (copy it now, it is shown only once):', r.data.password); }
     if (act === 'streset') { r = await db.rpc('admin_reset_staff_password', { p_id: id }); if (!r.error) prompt('New password (copy it now, shown only once):', r.data); }
     if (act === 'stactive') r = await db.rpc('admin_set_staff', { p_id: id, p_active: b.dataset.on === '1', p_perms: null });
